@@ -13,17 +13,17 @@ import java.util.logging.Logger;
 public class MongoDbDAOFactory implements IDAOFactory {
 
     // ---------------------------------------------------------------
-    // paramètres "variables"
+    // Paramètres "variables"
     // ---------------------------------------------------------------
     private IActorDAO actorDAO;
     private IMovieDAO movieDAO;
 
-    private Connection connection;
+    // ---------------------------------------------------------------
+    // Paramètres "statiques"
+    // ---------------------------------------------------------------
+    private static Connection connection;
 
-    // ---------------------------------------------------------------
-    // paramètres "statiques"
-    // ---------------------------------------------------------------
-    public static final String dbName = "Movies";
+    private static final String dbName = "Movies";
     private static final String driver = "com.dbschema.MongoJdbcDriver";
     private static final String url = "jdbc:mariadb://localhost:3306/" + dbName + "?serverTimezone=UTC";
 
@@ -55,7 +55,7 @@ public class MongoDbDAOFactory implements IDAOFactory {
     }
 
     // ---------------------------------------------------------------
-    // gestion des Transactions
+    // Gestion des Transactions
     // ---------------------------------------------------------------
     public void beginTransaction() throws SQLException { connection.setAutoCommit(false); }
 

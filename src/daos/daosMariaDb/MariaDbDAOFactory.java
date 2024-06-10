@@ -13,16 +13,16 @@ import java.util.logging.Logger;
 
 public class MariaDbDAOFactory implements IDAOFactory {
     // ---------------------------------------------------------------
-    // paramètres "variables"
+    // Paramètres "variables"
     // ---------------------------------------------------------------
     private IActorDAO actorDAO;
     private IMovieDAO movieDAO;
 
-    private Connection connection;
+    // ---------------------------------------------------------------
+    // Paramètres "statiques"
+    // ---------------------------------------------------------------
+    private static Connection connection;
 
-    // ---------------------------------------------------------------
-    // paramètres "statiques"
-    // ---------------------------------------------------------------
     public static final String dbName = "Movies";
     private static final String driver = "org.mariadb.jdbc";
     private static final String url = "jdbc:mariadb://localhost:3306/" + dbName + "?serverTimezone=UTC";
@@ -56,7 +56,7 @@ public class MariaDbDAOFactory implements IDAOFactory {
     }
 
     // ---------------------------------------------------------------
-    // gestion des Transactions
+    // Gestion des Transactions
     // ---------------------------------------------------------------
     public void beginTransaction() throws SQLException { connection.setAutoCommit(false); }
 
