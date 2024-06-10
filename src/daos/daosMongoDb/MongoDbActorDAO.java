@@ -1,8 +1,7 @@
 package daos.daosMongoDb;
 
 import beans.Actor;
-import daos.BaseActorDAO;
-import daos.DAO;
+import daos.interfaces.IActorDAO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,15 +11,17 @@ import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ActorDAO extends BaseActorDAO {
+public class MongoDbActorDAO implements IActorDAO {
     public final String tableName = "actors";
     public final String keyColumnName = "id";
     public final String firstnameColumnName = "firstname";
     public final String lastnameColumnName = "lastname";
     public final String birthdateColumnName = "birthdate";
 
-    public ActorDAO(Connection connection) {
-        super(connection);
+    public final Connection conn;
+
+    public MongoDbActorDAO(Connection connection) {
+        this.conn = connection;
     }
 
     @Override
@@ -82,7 +83,6 @@ public class ActorDAO extends BaseActorDAO {
         return lst.toArray(Actor[]::new);
     }
 
-    @Override
     public Actor rsLineToObj(ResultSet rs) throws SQLException {
         if (rs.getRow() == 0) return null;
         return new Actor(

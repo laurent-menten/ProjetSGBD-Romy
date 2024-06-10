@@ -1,8 +1,7 @@
-package daos.daosMongoDb;
+package daos.daosMariaDb;
 
-import beans.Movie;
-import daos.BaseMovieDAO;
-import daos.DAO;
+import beans.Actor;
+import daos.interfaces.IActorDAO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,38 +11,43 @@ import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MovieDAO extends BaseMovieDAO {
-    public final String tableName = "movies";
+public class MariaDbActorDAO implements IActorDAO {
+    public final String tableName = "actors";
     public final String keyColumnName = "id";
-    public final String titleColumnName = "title";
-    public final String releaseDateColumnName = "releaseDate";
+    public final String firstnameColumnName = "firstname";
+    public final String lastnameColumnName = "lastname";
+    public final String birthdateColumnName = "birthdate";
 
-    public MovieDAO(Connection connection) {
-        super(connection);
+    public final Connection conn;
+
+    public MariaDbActorDAO(Connection connection) {
+        this.conn = connection;
     }
 
     @Override
-    public void create(Movie obj) throws SQLException {
-        String rq = String.format("INSERT INTO %s  VALUES(?,?,?);", tableName);
+    public void create(Actor obj) throws SQLException {
+        String rq = String.format("INSERT INTO %s  VALUES(?,?,?,?);", tableName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getTitle());
-        ps.setObject(3, obj.getReleaseDate());
+        ps.setObject(2, obj.getFirstname());
+        ps.setObject(3, obj.getLastname());
+        ps.setObject(4, obj.getBirthdate());
         int result = ps.executeUpdate();
     }
 
     @Override
-    public void update(Movie obj) throws SQLException {
-        String rq = String.format("UPDATE %s  SET %s = ?, %s = ? WHERE %s = ?", tableName, titleColumnName, releaseDateColumnName, keyColumnName);
+    public void update(Actor obj) throws SQLException {
+        String rq = String.format("UPDATE %s  SET %s = ?, %s = ? WHERE %s = ?", tableName, firstnameColumnName, lastnameColumnName, birthdateColumnName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getTitle());
-        ps.setObject(3, obj.getReleaseDate());
+        ps.setObject(2, obj.getFirstname());
+        ps.setObject(3, obj.getLastname());
+        ps.setObject(4, obj.getBirthdate());
         int result = ps.executeUpdate();
     }
 
     @Override
-    public void delete(Movie obj) throws SQLException {
+    public void delete(Actor obj) throws SQLException {
         deleteById(obj.getId());
     }
 
@@ -56,7 +60,7 @@ public class MovieDAO extends BaseMovieDAO {
     }
 
     @Override
-    public Movie findById(Integer id) throws SQLException {
+    public Actor findById(Integer id) throws SQLException {
         String rq = String.format("SELECT * FROM %s WHERE %s=?;", tableName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ps.setObject(1, id);
@@ -66,35 +70,25 @@ public class MovieDAO extends BaseMovieDAO {
     }
 
     @Override
-    public Movie[] findAll() throws SQLException {
+    public Actor[] findAll() throws SQLException {
         String rq = String.format("SELECT * FROM %s;", tableName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ResultSet rs = ps.executeQuery();
 
-        List<Movie> lst = new LinkedList<>();
+        List<Actor> lst = new LinkedList<>();
         while (rs.next()) {
             lst.add(rsLineToObj(rs));
         }
 
-        return lst.toArray(Movie[]::new);
+        return lst.toArray(Actor[]::new);
     }
 
-    @Override
-    public Movie rsLineToObj(ResultSet rs) throws SQLException {
+    public Actor rsLineToObj(ResultSet rs) throws SQLException {
         if (rs.getRow() == 0) return null;
-        return new Movie(
+        return new Actor(
                 rs.getInt("id"),
-                rs.getString("title"),
+                rs.getString("firstname"),
+                rs.getString("lastname"),
                 LocalDate.parse(rs.getDate("birthdate").toString()));
     }
-
-    /*
-    *  1 ActeurBidule
-    *  1 FilmRandom
-    *  1 1
-    *
-    *  1 ActeurBidule 1 FilmRandom
-    *  2 ActeurMachin 1 FilmRandom
-    *
-    * */
 }
