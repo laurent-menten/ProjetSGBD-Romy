@@ -23,7 +23,6 @@ public class MariaDbMovieDAO implements IMovieDAO {
         this.conn = connection;
     }
 
-    @Override
     public void create(Movie obj) throws SQLException {
         String rq = String.format("INSERT INTO %s  VALUES(?,?,?);", tableName);
         PreparedStatement ps = conn.prepareStatement(rq);
@@ -33,7 +32,6 @@ public class MariaDbMovieDAO implements IMovieDAO {
         int result = ps.executeUpdate();
     }
 
-    @Override
     public void update(Movie obj) throws SQLException {
         String rq = String.format("UPDATE %s  SET %s = ?, %s = ? WHERE %s = ?", tableName, titleColumnName, releaseDateColumnName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
@@ -43,12 +41,10 @@ public class MariaDbMovieDAO implements IMovieDAO {
         int result = ps.executeUpdate();
     }
 
-    @Override
     public void delete(Movie obj) throws SQLException {
         deleteById(obj.getId());
     }
 
-    @Override
     public void deleteById(Integer id) throws SQLException {
         String rq = String.format("DELETE FROM %s WHERE %s = ?;", tableName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
@@ -56,7 +52,6 @@ public class MariaDbMovieDAO implements IMovieDAO {
         int result = ps.executeUpdate();
     }
 
-    @Override
     public Movie findById(Integer id) throws SQLException {
         String rq = String.format("SELECT * FROM %s WHERE %s=?;", tableName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
@@ -66,7 +61,6 @@ public class MariaDbMovieDAO implements IMovieDAO {
         return rsLineToObj(rs);
     }
 
-    @Override
     public Movie[] findAll() throws SQLException {
         String rq = String.format("SELECT * FROM %s;", tableName);
         PreparedStatement ps = conn.prepareStatement(rq);
