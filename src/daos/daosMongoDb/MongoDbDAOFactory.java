@@ -3,12 +3,9 @@ package daos.daosMongoDb;
 import daos.interfaces.IActorDAO;
 import daos.interfaces.IDAOFactory;
 import daos.interfaces.IMovieDAO;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
 
 public class MongoDbDAOFactory implements IDAOFactory {
 
@@ -21,53 +18,51 @@ public class MongoDbDAOFactory implements IDAOFactory {
     // ---------------------------------------------------------------
     // Paramètres "statiques"
     // ---------------------------------------------------------------
-    private static Connection connection;
+    private static MongoClient mongoClient;
+    private static MongoDatabase database;
 
     private static final String dbName = "Movies";
-    private static final String driver = "com.dbschema.MongoJdbcDriver";
-    private static final String url = "jdbc:mariadb://localhost:3306/" + dbName + "?serverTimezone=UTC";
 
-    public MongoDbDAOFactory(String username, String password){
-        connection = getConnection(username, password);
+    public MongoDbDAOFactory(String connectionString){
+        mongoClient = getMongoClient(connectionString);
+        database = mongoClient.getDatabase(dbName);
     }
 
-    protected Connection getConnection(String username, String password) {
-        if (connection == null) {
-            try {
-                Class.forName(driver);
-                connection = DriverManager.getConnection(url, username, password);
-                connection.setAutoCommit(true);
-            } catch (ClassNotFoundException | SQLException ex) {
-                Logger.getLogger(MongoDbDAOFactory.class.getName()).log(Level.SEVERE, null, ex);
-            }
+    protected MongoClient getMongoClient(String connectionString) {
+        if (mongoClient == null) {
+            mongoClient = MongoClients.create(connectionString);
         }
-        return connection;
+        return mongoClient;
     }
 
     public IActorDAO getActorDAO() {
-        if (actorDAO == null) actorDAO = new MongoDbActorDAO(connection);
+        if (actorDAO == null) actorDAO = new MongoDbActorDAO(mongoClient, dbName);
         return actorDAO;
     }
 
     public IMovieDAO getMovieDAO() {
-        if (movieDAO == null) movieDAO = new MongoDbMovieDAO(connection);
+        if (movieDAO == null) movieDAO = new MongoDbMovieDAO(mongoClient, dbName);
         return movieDAO;
     }
 
     // ---------------------------------------------------------------
-    // Gestion des Transactions
+    // Gestion des Transactions (not applicable in the same way for MongoDB)
     // ---------------------------------------------------------------
-    public void beginTransaction() throws SQLException { connection.setAutoCommit(false); }
-
-    public void commitTransaction() throws SQLException {
-        connection.commit();
-        connection.setAutoCommit(true);
+    public void beginTransaction() {
+        // MongoDB transactions are typically handled differently and are often not necessary for many applications.
     }
 
-    public void rollbackTransaction() throws SQLException {
-        connection.rollback();
-        connection.setAutoCommit(true);
+    public void commitTransaction() {
+        // Commit transaction logic if using multi-document transactions
     }
 
-    public void close() throws SQLException { connection.close(); }
+    public void rollbackTransaction() {
+        // Rollback transaction logic if using multi-document transactions
+    }
+
+    public void close() {
+        if (mongoClient != null) {
+            mongoClient.close();
+        }
+    }
 }

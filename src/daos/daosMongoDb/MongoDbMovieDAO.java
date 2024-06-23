@@ -2,84 +2,76 @@ package daos.daosMongoDb;
 
 import beans.Movie;
 import daos.interfaces.IMovieDAO;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.LinkedList;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
+import static com.mongodb.client.model.Filters.eq;
+
 public class MongoDbMovieDAO implements IMovieDAO {
-    public final String tableName = "movies";
-    public final String keyColumnName = "id";
-    public final String titleColumnName = "title";
-    public final String releaseDateColumnName = "releaseDate";
+    private final MongoCollection<Document> collection;
 
-    public final Connection conn;
-
-    public MongoDbMovieDAO(Connection connection) {
-        this.conn = connection;
+    public MongoDbMovieDAO(String connectionString, String dbName) {
+        MongoClient mongoClient = MongoClients.create(connectionString);
+        MongoDatabase database = mongoClient.getDatabase(dbName);
+        this.collection = database.getCollection("movies");
     }
 
-    public void create(Movie obj) throws SQLException {
-        String rq = String.format("INSERT INTO %s  VALUES(?,?,?);", tableName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getTitle());
-        ps.setObject(3, obj.getReleaseDate());
-        int result = ps.executeUpdate();
+    @Override
+    public void create(Movie obj) {
+        Document doc = new Document("_id", new ObjectId())
+                .append("id", obj.getId())
+                .append("title", obj.getTitle())
+                .append("releaseDate", obj.getReleaseDate().toString());
+        collection.insertOne(doc);
     }
 
-    public void update(Movie obj) throws SQLException {
-        String rq = String.format("UPDATE %s  SET %s = ?, %s = ? WHERE %s = ?", tableName, titleColumnName, releaseDateColumnName, keyColumnName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getTitle());
-        ps.setObject(3, obj.getReleaseDate());
-        int result = ps.executeUpdate();
+    @Override
+    public void update(Movie obj) {
+        Document updatedDoc = new Document("id", obj.getId())
+                .append("title", obj.getTitle())
+                .append("releaseDate", obj.getReleaseDate().toString());
+        collection.updateOne(eq("id", obj.getId()), new Document("$set", updatedDoc));
     }
 
-    public void delete(Movie obj) throws SQLException {
+    @Override
+    public void delete(Movie obj) {
         deleteById(obj.getId());
     }
 
-    public void deleteById(Integer id) throws SQLException {
-        String rq = String.format("DELETE FROM %s WHERE %s = ?;", tableName, keyColumnName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, id);
-        int result = ps.executeUpdate();
+    @Override
+    public void deleteById(Integer id) {
+        collection.deleteOne(eq("id", id));
     }
 
-    public Movie findById(Integer id) throws SQLException {
-        String rq = String.format("SELECT * FROM %s WHERE %s=?;", tableName, keyColumnName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, id);
-        ResultSet rs = ps.executeQuery();
-        rs.next();  // se placer sur la 1ère ligne si elle existe
-        return rsLineToObj(rs);
+    @Override
+    public Movie findById(Integer id) {
+        Document doc = collection.find(eq("id", id)).first();
+        return doc != null ? docToMovie(doc) : null;
     }
 
-    public Movie[] findAll() throws SQLException {
-        String rq = String.format("SELECT * FROM %s;", tableName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ResultSet rs = ps.executeQuery();
-
-        List<Movie> lst = new LinkedList<>();
-        while (rs.next()) {
-            lst.add(rsLineToObj(rs));
+    @Override
+    public Movie[] findAll() {
+        List<Movie> movies = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            movies.add(docToMovie(doc));
         }
-
-        return lst.toArray(Movie[]::new);
+        return movies.toArray(new Movie[0]);
     }
 
-    public Movie rsLineToObj(ResultSet rs) throws SQLException {
-        if (rs.getRow() == 0) return null;
+    private Movie docToMovie(Document doc) {
         return new Movie(
-                rs.getInt("id"),
-                rs.getString("title"),
-                LocalDate.parse(rs.getDate("birthdate").toString()),
-                new int[0]);
+                doc.getInteger("id"),
+                doc.getString("title"),
+                LocalDate.parse(doc.getString("releaseDate"), DateTimeFormatter.ISO_DATE),
+                new int[0]);  // Assuming you have an array of integers; adjust as needed
     }
 }

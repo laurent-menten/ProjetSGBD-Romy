@@ -2,93 +2,78 @@ package daos.daosMongoDb;
 
 import beans.Actor;
 import daos.interfaces.IActorDAO;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.LinkedList;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
+import static com.mongodb.client.model.Filters.eq;
+
 public class MongoDbActorDAO implements IActorDAO {
-    public final String tableName = "actors";
-    public final String keyColumnName = "id";
-    public final String firstnameColumnName = "firstname";
-    public final String lastnameColumnName = "lastname";
-    public final String birthdateColumnName = "birthdate";
+    private final MongoCollection<Document> collection;
 
-    public final Connection conn;
-
-    public MongoDbActorDAO(Connection connection) {
-        this.conn = connection;
+    public MongoDbActorDAO(String connectionString, String dbName) {
+        MongoClient mongoClient = MongoClients.create(connectionString);
+        MongoDatabase database = mongoClient.getDatabase(dbName);
+        this.collection = database.getCollection("actors");
     }
 
-    @Override
-    public void create(Actor obj) throws SQLException {
-        String rq = String.format("INSERT INTO %s  VALUES(?,?,?,?);", tableName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getFirstname());
-        ps.setObject(3, obj.getLastname());
-        ps.setObject(4, obj.getBirthdate());
-        int result = ps.executeUpdate();
+      
+    public void create(Actor obj) {
+        Document doc = new Document("_id", new ObjectId())
+                .append("id", obj.getId())
+                .append("firstname", obj.getFirstname())
+                .append("lastname", obj.getLastname())
+                .append("birthdate", obj.getBirthdate().toString());
+        collection.insertOne(doc);
     }
 
-    @Override
-    public void update(Actor obj) throws SQLException {
-        String rq = String.format("UPDATE %s  SET %s = ?, %s = ? WHERE %s = ?", tableName, firstnameColumnName, lastnameColumnName, birthdateColumnName, keyColumnName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getFirstname());
-        ps.setObject(3, obj.getLastname());
-        ps.setObject(4, obj.getBirthdate());
-        int result = ps.executeUpdate();
+      
+    public void update(Actor obj) {
+        Document updatedDoc = new Document("id", obj.getId())
+                .append("firstname", obj.getFirstname())
+                .append("lastname", obj.getLastname())
+                .append("birthdate", obj.getBirthdate().toString());
+        collection.updateOne(eq("id", obj.getId()), new Document("$set", updatedDoc));
     }
 
-    @Override
-    public void delete(Actor obj) throws SQLException {
+      
+    public void delete(Actor obj) {
         deleteById(obj.getId());
     }
 
-    @Override
-    public void deleteById(Integer id) throws SQLException {
-        String rq = String.format("DELETE FROM %s WHERE %s = ?;", tableName, keyColumnName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, id);
-        int result = ps.executeUpdate();
+      
+    public void deleteById(Integer id) {
+        collection.deleteOne(eq("id", id));
     }
 
-    @Override
-    public Actor findById(Integer id) throws SQLException {
-        String rq = String.format("SELECT * FROM %s WHERE %s=?;", tableName, keyColumnName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, id);
-        ResultSet rs = ps.executeQuery();
-        rs.next();  // se placer sur la 1ère ligne si elle existe
-        return rsLineToObj(rs);
+      
+    public Actor findById(Integer id) {
+        Document doc = collection.find(eq("id", id)).first();
+        return doc != null ? docToActor(doc) : null;
     }
 
-    @Override
-    public Actor[] findAll() throws SQLException {
-        String rq = String.format("SELECT * FROM %s;", tableName);
-        PreparedStatement ps = conn.prepareStatement(rq);
-        ResultSet rs = ps.executeQuery();
-
-        List<Actor> lst = new LinkedList<>();
-        while (rs.next()) {
-            lst.add(rsLineToObj(rs));
+      
+    public Actor[] findAll() {
+        List<Actor> actors = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            actors.add(docToActor(doc));
         }
-
-        return lst.toArray(Actor[]::new);
+        return actors.toArray(new Actor[0]);
     }
 
-    public Actor rsLineToObj(ResultSet rs) throws SQLException {
-        if (rs.getRow() == 0) return null;
+    private Actor docToActor(Document doc) {
         return new Actor(
-                rs.getInt("id"),
-                rs.getString("firstname"),
-                rs.getString("lastname"),
-                LocalDate.parse(rs.getDate("birthdate").toString()));
+                doc.getInteger("id"),
+                doc.getString("firstname"),
+                doc.getString("lastname"),
+                LocalDate.parse(doc.getString("birthdate"), DateTimeFormatter.ISO_DATE));
     }
 }

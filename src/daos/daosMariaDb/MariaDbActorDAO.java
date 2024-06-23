@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -26,24 +25,24 @@ public class MariaDbActorDAO implements IActorDAO {
 
     @Override
     public void create(Actor obj) throws SQLException {
-        String rq = String.format("INSERT INTO %s  VALUES(?,?,?,?);", tableName);
+        String rq = String.format("INSERT INTO %s (%s, %s, %s, %s) VALUES (?, ?, ?, ?);", tableName, keyColumnName, firstnameColumnName, lastnameColumnName, birthdateColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ps.setObject(1, obj.getId());
         ps.setObject(2, obj.getFirstname());
         ps.setObject(3, obj.getLastname());
         ps.setObject(4, obj.getBirthdate());
-        int result = ps.executeUpdate();
+        ps.executeUpdate();
     }
 
     @Override
     public void update(Actor obj) throws SQLException {
-        String rq = String.format("UPDATE %s  SET %s = ?, %s = ? WHERE %s = ?", tableName, firstnameColumnName, lastnameColumnName, birthdateColumnName, keyColumnName);
+        String rq = String.format("UPDATE %s SET %s = ?, %s = ?, %s = ? WHERE %s = ?", tableName, firstnameColumnName, lastnameColumnName, birthdateColumnName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
-        ps.setObject(1, obj.getId());
-        ps.setObject(2, obj.getFirstname());
-        ps.setObject(3, obj.getLastname());
-        ps.setObject(4, obj.getBirthdate());
-        int result = ps.executeUpdate();
+        ps.setObject(1, obj.getFirstname());
+        ps.setObject(2, obj.getLastname());
+        ps.setObject(3, obj.getBirthdate());
+        ps.setObject(4, obj.getId());
+        ps.executeUpdate();
     }
 
     @Override
@@ -56,17 +55,19 @@ public class MariaDbActorDAO implements IActorDAO {
         String rq = String.format("DELETE FROM %s WHERE %s = ?;", tableName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ps.setObject(1, id);
-        int result = ps.executeUpdate();
+        ps.executeUpdate();
     }
 
     @Override
     public Actor findById(Integer id) throws SQLException {
-        String rq = String.format("SELECT * FROM %s WHERE %s=?;", tableName, keyColumnName);
+        String rq = String.format("SELECT * FROM %s WHERE %s = ?;", tableName, keyColumnName);
         PreparedStatement ps = conn.prepareStatement(rq);
         ps.setObject(1, id);
         ResultSet rs = ps.executeQuery();
-        rs.next();  // se placer sur la 1ère ligne si elle existe
-        return rsLineToObj(rs);
+        if (rs.next()) {
+            return rsLineToObj(rs);
+        }
+        return null; // Return null if no result is found
     }
 
     @Override
@@ -80,15 +81,14 @@ public class MariaDbActorDAO implements IActorDAO {
             lst.add(rsLineToObj(rs));
         }
 
-        return lst.toArray(Actor[]::new);
+        return lst.toArray(new Actor[0]);
     }
 
-    public Actor rsLineToObj(ResultSet rs) throws SQLException {
-        if (rs.getRow() == 0) return null;
+    private Actor rsLineToObj(ResultSet rs) throws SQLException {
         return new Actor(
-                rs.getInt("id"),
-                rs.getString("firstname"),
-                rs.getString("lastname"),
-                LocalDate.parse(rs.getDate("birthdate").toString()));
+                rs.getInt(keyColumnName),
+                rs.getString(firstnameColumnName),
+                rs.getString(lastnameColumnName),
+                rs.getDate(birthdateColumnName).toLocalDate());
     }
 }
