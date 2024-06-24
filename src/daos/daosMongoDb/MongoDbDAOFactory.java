@@ -21,7 +21,7 @@ public class MongoDbDAOFactory implements IDAOFactory {
     private static MongoClient mongoClient;
     private static MongoDatabase database;
 
-    private static final String dbName = "Movies";
+    private static final String dbName = "ActeursFilms";
 
     public MongoDbDAOFactory(String connectionString){
         mongoClient = getMongoClient(connectionString);

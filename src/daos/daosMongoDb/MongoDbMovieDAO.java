@@ -19,11 +19,19 @@ import static com.mongodb.client.model.Filters.eq;
 public class MongoDbMovieDAO implements IMovieDAO {
     private final MongoCollection<Document> collection;
 
-    public MongoDbMovieDAO(String connectionString, String dbName) {
+    public MongoDbMovieDAO(MongoClient client, String dbName )
+    {
+        collection = client.getDatabase(dbName).getCollection("movies");
+    }
+
+    /*
+    public MongoDbMovieDAO(String connectionString, String dbName)
+     {
         MongoClient mongoClient = MongoClients.create(connectionString);
         MongoDatabase database = mongoClient.getDatabase(dbName);
         this.collection = database.getCollection("movies");
     }
+    */
 
     @Override
     public void create(Movie obj) {

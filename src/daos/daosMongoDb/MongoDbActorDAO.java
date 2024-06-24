@@ -19,12 +19,19 @@ import static com.mongodb.client.model.Filters.eq;
 public class MongoDbActorDAO implements IActorDAO {
     private final MongoCollection<Document> collection;
 
-    public MongoDbActorDAO(String connectionString, String dbName) {
+    public MongoDbActorDAO(MongoClient client, String dbName)
+    {
+        collection = client.getDatabase(dbName).getCollection("actors");
+    }
+
+    /*
+    public MongoDbActorDAO(String connectionString, String dbName)
+     {
         MongoClient mongoClient = MongoClients.create(connectionString);
         MongoDatabase database = mongoClient.getDatabase(dbName);
         this.collection = database.getCollection("actors");
     }
-
+    */
       
     public void create(Actor obj) {
         Document doc = new Document("_id", new ObjectId())

@@ -12,7 +12,9 @@ public class Main {
     public static void main(String[] args) throws SQLException {
 
         // Exemple avec mongoDB
-        IDAOFactory daoFactory = new MongoDbDAOFactory("", "");
+        IDAOFactory daoFactory = new MongoDbDAOFactory("mongodb://localhost:27017" );
+
+        // ---
 
         IActorDAO actorDAO = daoFactory.getActorDAO();
 
@@ -22,6 +24,9 @@ public class Main {
         actorDAO.create(new Actor(4,"Brandon", "Fraser", LocalDate.of(1968, 12,3)));
         actorDAO.create(new Actor(5,"Colin", "Morgan", LocalDate.of(1986, 1,1)));
         actorDAO.create(new Actor(6,"Michael", "Douglas", LocalDate.of(1944, 9,25)));
+        affActors(actorDAO);
+
+        // ---
 
         IMovieDAO movieDAO = daoFactory.getMovieDAO();
 
@@ -31,6 +36,8 @@ public class Main {
         movieDAO.create(new Movie(4, "The Mummy", LocalDate.of(1999, 5,1), new int[]{ 4 }));
         movieDAO.create(new Movie(5, "Kingdom of heaven", LocalDate.of(2005, 5,1), new int[]{ 1 }));
         affMovies(movieDAO);
+
+        // ---
 
         // avec gestion de transaction
         daoFactory.beginTransaction();

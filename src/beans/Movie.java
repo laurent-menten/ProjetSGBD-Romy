@@ -1,6 +1,6 @@
 package beans;
 
-import com.google.gson.Gson;
+//import com.google.gson.Gson;
 
 import java.time.LocalDate;
 
@@ -56,8 +56,13 @@ public class Movie {
 
     @Override
     public String toString() {
-        Gson gson = new Gson();
-        String json = gson.toJson(this.actors);
-        return String.format("Movie [id=%d, title=%s, releaseDate=%s, actors=[%s]]", id, title, releaseDate, json);
+
+        StringBuilder builder = new StringBuilder();
+        for( int actor : actors )
+        {
+            builder.append( actor ).append( "," );
+        }
+
+        return String.format("Movie [id=%d, title=%s, releaseDate=%s, actors=[%s]]", id, title, releaseDate, builder.toString());
     }
 }
